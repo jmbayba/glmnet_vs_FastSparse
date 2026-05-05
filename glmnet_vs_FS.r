@@ -14,10 +14,60 @@ barplot(table(df_train$Customer.Type), main="Customer Type Distribution", col="l
 hist(df_train$Flight.Distance, main="Flight Distance Distribution", 
      xlab="Distance", col="lightgreen", breaks=20)
 
+# Histogram for Age
+hist(df_train$Age, main="Age Distribution", col="skyblue")
+
+# Histogram for Arrival Delay in Minutes
+hist(df_train$Arrival.Delay.in.Minutes, main="Arrival Delay", col="red")
+
 # Boxplot of Age by Satisfaction
 boxplot(Age ~ as.factor(satisfaction), data=df_train, 
         main="Age vs Satisfaction", col=c("salmon", "cyan"))
 
+# Visualizing categorical varibles
+barplot(table(df_train$Gender), main="Gender Distribution")
+barplot(table(df_train$Class), main="Class Distribution")
+
+# Visualizing in regards to satisfaction as the response variable
+df_train$satisfaction <- as.factor(df_train$satisfaction)
+
+library(ggplot2)
+boxplot(Seat.comfort ~ satisfaction, data=df_train, col=c("red","green"))
+boxplot(Inflight.entertainment ~ satisfaction, data=df_train, col=c("red","green"))
+boxplot(Cleanliness ~ satisfaction, data=df_train, col=c("red","green"))
+boxplot(Checkin.service ~ satisfaction, data=df_train, col=c("red","green"))
+boxplot(Inflight.service ~ satisfaction, data=df_train, col=c("red","green"))
+boxplot(Ease.of.Online.booking ~ satisfaction, data=df_train, col=c("red","green"))
+
+ggplot(df_train, aes(x=Class, fill=satisfaction)) +
+  geom_bar(position="fill") +
+  ylab("Proportion")
+
+ggplot(df_train, aes(x=Type.of.Travel, fill=satisfaction)) +
+  geom_bar(position="fill")
+
+ggplot(df_train, aes(x=Customer.Type, fill=satisfaction)) +
+  geom_bar(position="fill")
+ggplot(df_train, aes(x=satisfaction, y=Arrival.Delay.in.Minutes, fill=satisfaction)) +
+  geom_boxplot()
+
+ggplot(df_train, aes(x=satisfaction, y=Arrival.Delay.in.Minutes, fill=satisfaction)) +
+  geom_boxplot()  +
+  scale_y_log10()
+
+ggplot(df_train, aes(x=satisfaction, y=Departure.Delay.in.Minutes, fill=satisfaction)) +
+  geom_boxplot()
+
+ggplot(df_train, aes(x=satisfaction, y=Departure.Delay.in.Minutes, fill=satisfaction)) +
+  geom_boxplot()  +
+  scale_y_log10()
+
+ggplot(df_train, aes(x=satisfaction, y=
+                       Flight.Distance, fill=satisfaction)) +
+  geom_boxplot()
+
+ggplot(df_train, aes(x=satisfaction, y=Age, fill=satisfaction)) +
+  geom_boxplot()
 
 # --- PART 2: Data Preparation ---
 # Remove non-predictive ID columns
@@ -103,6 +153,18 @@ formula_str <- paste0(
 
 cat(formula_str)
 
+# Print the number of variables
+# Convert to vector
+coef_vec_lasso <- as.vector(coeffs)
+names(coef_vec_lasso) <- rownames(coeffs)
+
+# Remove intercept
+coef_vec_lasso <- coef_vec_lasso[names(coef_vec_lasso) != "(Intercept)"]
+
+# Count non-zero coefficients
+num_vars_lasso <- sum(coef_vec_lasso != 0)
+
+print(num_vars_lasso)
 # FastSparse model
 cv_fit <- FastSparse.cvfit(x_vars, y_var, algorithm = "CDPSI", loss = "Logistic")
 
@@ -147,3 +209,13 @@ print(paste("FastSparse Accuracy:", round(accuracy_fs * 100, 2), "%"))
 table(Predicted = pred_class, Actual = y_varT)
 
 accuracy_fs
+
+# Print the number of variables
+num_vars_fs <- length(coef_vec)
+
+print(num_vars_fs)
+comparison_df <- data.frame(
+  Method <- c("glmnet(Lasso)", "FastSparse"),
+  Accurracy <- c(accuracy_lasso, accuracy_fs),
+  NumberOfVariables <- c(num_vars_lasso, num_vars_fs)
+)
